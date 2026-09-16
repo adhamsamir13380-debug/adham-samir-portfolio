@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>أدهم سمير | Adham Samir - 3D Web Developer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#00f0ff',
+                        secondary: '#7000ff',
+                        darkBg: '#0a0a16',
+                        cardBg: 'rgba(20, 20, 40, 0.65)'
+                    },
+                    fontFamily: {
+                        cairo: ['Cairo', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Cairo', 'Poppins', sans-serif;
+            background-color: #0a0a16;
+            color: #ffffff;
+            overflow-x: hidden;
+        }
+
+        /* Canvas background */
+        #webgl-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Glassmorphism styling */
+        .glass-panel {
+            background: rgba(15, 15, 35, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s ease;
+        }
+
+        .glass-card:hover {
+            border-color: rgba(0, 240, 255, 0.5);
+            transform: translateY(-8px);
+            box-shadow: 0 10px 25px -5px rgba(0, 240, 255, 0.3);
+        }
+
+        /* Text Neon Glow */
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.7), 0 0 20px rgba(0, 240, 255, 0.5);
+        }
+
+        .glow-purple {
+            text-shadow: 0 0 10px rgba(112, 0, 255, 0.7), 0 0 20px rgba(112, 0, 255, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #7000ff;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00f0ff;
+        }
+    </style>
+</head>
+<body class="selection:bg-primary selection:text-black">
+
+    <!-- 3D Background Canvas -->
+    <canvas id="webgl-bg"></canvas>
+
+    <!-- Intro Cinematic Curtain -->
+    <div id="cinematic-intro" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black transition-opacity duration-1000">
+        <div class="text-center px-4">
+            <h1 id="intro-title" class="text-4xl md:text-7xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-secondary mb-4 opacity-0 transform translate-y-10">
+                ADHAM SAMIR
+            </h1>
+            <p id="intro-subtitle" class="text-lg md:text-2xl text-gray-400 font-light tracking-wider opacity-0 transform translate-y-10">
+                3D WEB DEVELOPER & CREATIVE ENGINEER
+            </p>
+            <div id="intro-loader" class="mt-8 w-48 h-1 bg-gray-800 rounded-full overflow-hidden mx-auto opacity-0">
+                <div id="intro-bar" class="w-0 h-full bg-gradient-to-r from-primary to-secondary"></div>
+            </div>
+            <button id="enter-btn" onclick="startExperience()" class="mt-8 px-8 py-3 rounded-full border border-primary text-primary font-bold hover:bg-primary hover:text-black transition-all duration-300 opacity-0 pointer-events-none shadow-[0_0_15px_rgba(0,240,255,0.4)]">
+                <span class="lang-ar">استكشف البورتفوليو</span>
+                <span class="lang-en hidden">Enter Experience</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-40 px-6 py-4 transition-all duration-300">
+        <div class="max-w-7xl mx-auto flex justify-between items-center glass-panel rounded-2xl px-6 py-3">
+            <a href="#" class="text-2xl font-black tracking-wider text-primary glow-text">
+                A<span class="text-white">S</span>.
+            </a>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center space-x-8 space-x-reverse font-semibold">
+                <a href="#about" class="hover:text-primary transition-colors"><span class="lang-ar">من أنا</span><span class="lang-en hidden">About</span></a>
+                <a href="#skills" class="hover:text-primary transition-colors"><span class="lang-ar">المهارات</span><span class="lang-en hidden">Skills</span></a>
+                <a href="#projects" class="hover:text-primary transition-colors"><span class="lang-ar">الأعمال</span><span class="lang-en hidden">Projects</span></a>
+                <a href="#contact" class="hover:text-primary transition-colors"><span class="lang-ar">تواصل معي</span><span class="lang-en hidden">Contact</span></a>
+            </div>
+
+            <!-- Controls (Lang & Mobile Menu) -->
+            <div class="flex items-center space-x-4 space-x-reverse">
+                <button onclick="toggleLanguage()" class="px-3 py-1 text-sm rounded-lg border border-gray-600 hover:border-primary text-gray-300 hover:text-white transition-all flex items-center gap-2">
+                    <i class="fa-solid me-1"></i>
+                    <span id="lang-btn-text">EN</span>
+                </button>
+                <a href="https://wa.me/201042587732" target="_blank" class="hidden sm:flex items-center gap-2 bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg hover:shadow-green-500/30">
+                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                    <span>01042587732</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content Container -->
+    <main class="relative z-10 pt-24">
+
+        <!-- Hero Section -->
+        <section class="min-h-screen flex items-center justify-center px-6 relative">
+            <div class="max-w-5xl mx-auto text-center">
+                <div class="inline-block mb-4 px-4 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-sm font-semibold tracking-wide">
+                    <span class="lang-ar">مطور ويب ثلاثي الأبعاد</span>
+                    <span class="lang-en hidden">3D Web Developer & Interactive Designer</span>
+                </div>
+                <h1 class="text-5xl md:text-8xl font-black mb-6 tracking-tight leading-tight">
+                    <span class="lang-ar">أدهم سمير</span>
+                    <span class="lang-en hidden">Adham Samir</span>
+                </h1>
+                <p class="text-lg md:text-2xl text-gray-300 mb-10 max-w-3xl mx-auto leading-relaxed">
+                    <span class="lang-ar">أقوم بتحويل الأفكار التقليدية إلى تجارب تفاعلية ثلاثية الأبعاد تنبض بالحياة باستخدام أحدث تقنيات الويب.</span>
+                    <span class="lang-en hidden">Transforming conventional ideas into immersive, interactive 3D web experiences using cutting-edge technologies.</span>
+                </p>
+                
+                <div class="flex flex-wrap justify-center gap-4">
+                    <a href="#projects" class="px-8 py-4 rounded-xl bg-gradient-to-r from-primary to-secondary text-black font-extrabold hover:opacity-90 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(0,240,255,0.4)]">
+                        <span class="lang-ar">عرض المشاريع</span>
+                        <span class="lang-en hidden">View Projects</span>
+                    </a>
+                    <a href="https://wa.me/201042587732" target="_blank" class="px-8 py-4 rounded-xl glass-panel text-white font-bold hover:bg-white/10 transition-all border border-white/20 flex items-center gap-2">
+                        <i class="fa-brands fa-whatsapp text-xl text-green-400"></i>
+                        <span class="lang-ar">تواصل مباشرة</span>
+                        <span class="lang-en hidden">Direct Contact</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="py-24 px-6">
+            <div class="max-w-6xl mx-auto">
+                <div class="glass-panel p-8 md:p-12 rounded-3xl relative overflow-hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                        <div>
+                            <h2 class="text-3xl md:text-5xl font-extrabold mb-6 text-primary glow-text">
+                                <span class="lang-ar">عن أدهم سمير</span>
+                                <span class="lang-en hidden">About Adham Samir</span>
+                            </h2>
+                            <p class="text-gray-300 text-lg leading-relaxed mb-6">
+                                <span class="lang-ar">شغوف بابتكار واجهات مستخدم متطورة تتجاوز الحدود التقليدية للشاشات ثنائية الأبعاد. أمتلك خبرة عميقة في دمك جرافيك 3D في متصفحات الويب بطريقة سلسة وسريعة الاستجابة.</span>
+                                <span class="lang-en hidden">Passionate about building advanced user interfaces that push the boundaries of traditional 2D screens. I specialize in seamlessly integrating 3D graphics into high-performance web applications.</span>
+                            </p>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="glass-card p-4 rounded-xl border-s-4 border-s-primary">
+                                    <h3 class="text-3xl font-bold text-white">3+</h3>
+                                    <p class="text-sm text-gray-400">
+                                        <span class="lang-ar">سنوات خبرة</span>
+                                        <span class="lang-en hidden">Years Exp.</span>
+                                    </p>
+                                </div>
+                                <div class="glass-card p-4 rounded-xl border-s-4 border-s-secondary">
+                                    <h3 class="text-3xl font-bold text-white">20+</h3>
+                                    <p class="text-sm text-gray-400">
+                                        <span class="lang-ar">مشروع مكتمل</span>
+                                        <span class="lang-en hidden">Projects Done</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center">
+                            <!-- Floating 3D Card Simulation -->
+                            <div class="w-64 h-64 md:w-80 md:h-80 rounded-2xl border border-primary/30 bg-gradient-to-tr from-secondary/30 to-primary/20 flex flex-col items-center justify-center p-6 text-center shadow-[0_0_30px_rgba(112,0,255,0.2)] animate-pulse">
+                                <i class="fa-solid fa-cube text-6xl text-primary mb-4 animate-bounce"></i>
+                                <span class="text-xl font-bold text-white">Interactive 3D Mindset</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack & Skills -->
+        <section id="skills" class="py-24 px-6">
+            <div class="max-w-6xl mx-auto text-center">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12">
+                    <span class="lang-ar">التقنيات المعتمدة</span>
+                    <span class="lang-en hidden">Tech Stack & Skills</span>
+                </h2>
+                
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <!-- Three.js -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-shapes text-5xl text-primary mb-4"></i>
+                        <h3 class="font-bold text-lg">Three.js / WebGL</h3>
+                        <p class="text-xs text-gray-400 mt-2">3D Scene Rendering</p>
+                    </div>
+                    <!-- React / NextJS -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-brands fa-react text-5xl text-cyan-400 mb-4"></i>
+                        <h3 class="font-bold text-lg">React / Three Fiber</h3>
+                        <p class="text-xs text-gray-400 mt-2">Modern Frameworks</p>
+                    </div>
+                    <!-- JavaScript / ES6 -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-brands fa-js text-5xl text-yellow-400 mb-4"></i>
+                        <h3 class="font-bold text-lg">JavaScript (ES6+)</h3>
+                        <p class="text-xs text-gray-400 mt-2">Core Logic & Math</p>
+                    </div>
+                    <!-- GSAP -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-bolt text-5xl text-green-400 mb-4"></i>
+                        <h3 class="font-bold text-lg">GSAP Animation</h3>
+                        <p class="text-xs text-gray-400 mt-2">Smooth Motion & Timeline</p>
+                    </div>
+                    <!-- Tailwind CSS -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-code text-5xl text-sky-400 mb-4"></i>
+                        <h3 class="font-bold text-lg">Tailwind CSS</h3>
+                        <p class="text-xs text-gray-400 mt-2">Modern Responsive UI</p>
+                    </div>
+                    <!-- HTML5 / CSS3 -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-brands fa-html5 text-5xl text-orange-500 mb-4"></i>
+                        <h3 class="font-bold text-lg">HTML5 & CSS3</h3>
+                        <p class="text-xs text-gray-400 mt-2">Semantic Web Standards</p>
+                    </div>
+                    <!-- GLSL Shaders -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-solid fa-fire text-5xl text-red-500 mb-4"></i>
+                        <h3 class="font-bold text-lg">GLSL Shaders</h3>
+                        <p class="text-xs text-gray-400 mt-2">Custom Visual Effects</p>
+                    </div>
+                    <!-- Git & Workflow -->
+                    <div class="glass-card p-6 rounded-2xl flex flex-col items-center justify-center">
+                        <i class="fa-brands fa-git-alt text-5xl text-orange-600 mb-4"></i>
+                        <h3 class="font-bold text-lg">Git / GitHub</h3>
+                        <p class="text-xs text-gray-400 mt-2">Version Control</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Projects Showcase -->
+        <section id="projects" class="py-24 px-6">
+            <div class="max-w-6xl mx-auto">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-12 text-center">
+                    <span class="lang-ar">نماذج الأعمال</span>
+                    <span class="lang-en hidden">Featured Projects</span>
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Project 1 -->
+                    <div class="glass-card rounded-2xl overflow-hidden group">
+                        <div class="h-64 bg-gradient-to-r from-purple-900 to-indigo-900 flex items-center justify-center relative overflow-hidden">
+                            <i class="fa-solid fa-globe text-7xl text-white/20 group-hover:scale-125 transition-transform duration-500"></i>
+                            <div class="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors"></div>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2">3D Interactive Earth</h3>
+                            <p class="text-gray-400 text-sm mb-4">
+                                <span class="lang-ar">محاكاة كوكب الأرض ثلاثية الأبعاد تفاعلية تعرض البيانات وتغير الطقس في الوقت الفعلي.</span>
+                                <span class="lang-en hidden">An interactive 3D Earth simulation featuring real-time data visualization and weather updates.</span>
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-primary font-semibold">Three.js • WebGL</span>
+                                <a href="#" class="text-white hover:text-primary font-bold text-sm flex items-center gap-1">
+                                    <span class="lang-ar">معاينة</span>
+                                    <span class="lang-en hidden">Demo</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Project 2 -->
+                    <div class="glass-card rounded-2xl overflow-hidden group">
+                        <div class="h-64 bg-gradient-to-r from-cyan-900 to-blue-900 flex items-center justify-center relative overflow-hidden">
+                            <i class="fa-solid fa-vr-cardboard text-7xl text-white/20 group-hover:scale-125 transition-transform duration-500"></i>
+                            <div class="absolute inset-0 bg-black/40 group-hover:bg-black/10 transition-colors"></div>
+                        </div>
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold mb-2">Virtual Product Showroom</h3>
+                            <p class="text-gray-400 text-sm mb-4">
+                                <span class="lang-ar">معرض منتجات تفاعلي يتيح للمستخدمين تخصيص الألوان والخامات بتقنية ثلاثية الأبعاد.</span>
+                                <span class="lang-en hidden">An interactive virtual product configurator allowing real-time material and color customization.</span>
+                            </p>
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-primary font-semibold">React • R3F • GSAP</span>
+                                <a href="#" class="text-white hover:text-primary font-bold text-sm flex items-center gap-1">
+                                    <span class="lang-ar">معاينة</span>
+                                    <span class="lang-en hidden">Demo</span>
+                                    <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="py-24 px-6">
+            <div class="max-w-4xl mx-auto glass-panel p-8 md:p-12 rounded-3xl text-center">
+                <h2 class="text-3xl md:text-5xl font-extrabold mb-4 text-primary glow-text">
+                    <span class="lang-ar">لنبدأ العمل معاُ</span>
+                    <span class="lang-en hidden">Let's Build Something Amazing</span>
+                </h2>
+                <p class="text-gray-300 mb-8 max-w-xl mx-auto">
+                    <span class="lang-ar">هل لديك فكرة مشروع فريدة وتريد تحويلها لتجربة تفاعلية مبهرة؟ أرحب بتواصلك في أي وقت.</span>
+                    <span class="lang-en hidden">Have an ambitious project idea? I'm available for freelance work and full-time opportunities.</span>
+                </p>
+
+                <div class="flex flex-col sm:flex-row justify-center items-center gap-6">
+                    <a href="https://wa.me/201042587732" target="_blank" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold flex items-center justify-center gap-3 transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(34,197,94,0.4)]">
+                        <i class="fa-brands fa-whatsapp text-2xl"></i>
+                        <span>WhatsApp: 01042587732</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="relative z-10 border-t border-white/10 py-6 text-center text-gray-500 text-sm">
+        <p>© 2026 Adham Samir. All rights reserved.</p>
+    </footer>
+
+    <!-- Three.js & Logic Script -->
+    <script>
+        // ----------------------------------------------------
+        // Language Toggle Logic
+        // ----------------------------------------------------
+        let currentLang = 'ar';
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            document.documentElement.lang = currentLang;
+            document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+
+            document.querySelectorAll('.lang-ar').forEach(el => el.classList.toggle('hidden', currentLang !== 'ar'));
+            document.querySelectorAll('.lang-en').forEach(el => el.classList.toggle('hidden', currentLang !== 'en'));
+
+            document.getElementById('lang-btn-text').innerText = currentLang === 'ar' ? 'EN' : 'AR';
+        }
+
+        // ----------------------------------------------------
+        // Cinematic Intro Logic
+        // ----------------------------------------------------
+        window.addEventListener('DOMContentLoaded', () => {
+            const tl = gsap.timeline();
+            tl.to("#intro-title", { opacity: 1, y: 0, duration: 1, ease: "power3.out" })
+              .to("#intro-subtitle", { opacity: 1, y: 0, duration: 1, ease: "power3.out" }, "-=0.5")
+              .to("#intro-loader", { opacity: 1, duration: 0.5 }, "-=0.5")
+              .to("#intro-bar", { width: "100%", duration: 1.5, ease: "power2.inOut" })
+              .to("#intro-loader", { opacity: 0, duration: 0.3 })
+              .to("#enter-btn", { opacity: 1, pointerEvents: "auto", duration: 0.5 });
+        });
+
+        function startExperience() {
+            gsap.to("#cinematic-intro", {
+                opacity: 0,
+                duration: 1,
+                onComplete: () => {
+                    document.getElementById("cinematic-intro").style.display = "none";
+                }
+            });
+        }
+
+        // ----------------------------------------------------
+        // Three.js Dynamic Background Logic
+        // ----------------------------------------------------
+        const canvas = document.getElementById('webgl-bg');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        // Create Dynamic Particles Scene
+        const particlesCount = 1200;
+        const posArray = new Float32Array(particlesCount * 3);
+        const colorArray = new Float32Array(particlesCount * 3);
+
+        for(let i=0; i < particlesCount * 3; i+=3) {
+            posArray[i] = (Math.random() - 0.5) * 15;
+            posArray[i+1] = (Math.random() - 0.5) * 15;
+            posArray[i+2] = (Math.random() - 0.5) * 15;
+
+            // Neon Blue & Purple Gradient palette
+            colorArray[i] = Math.random() > 0.5 ? 0.0 : 0.44; // R
+            colorArray[i+1] = Math.random() > 0.5 ? 0.94 : 0.0; // G
+            colorArray[i+2] = 1.0; // B
+        }
+
+        const particlesGeometry = new THREE.BufferGeometry();
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        particlesGeometry.setAttribute('color', new THREE.BufferAttribute(colorArray, 3));
+
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.035,
+            vertexColors: true,
+            transparent: true,
+            opacity: 0.8,
+            blending: THREE.AdditiveBlending
+        });
+
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        // Add 3D Geometric Torus Knot in the background
+        const geometry = new THREE.TorusKnotGeometry(1.8, 0.4, 100, 16);
+        const material = new THREE.MeshBasicMaterial({ 
+            color: 0x7000ff, 
+            wireframe: true,
+            transparent: true,
+            opacity: 0.25
+        });
+        const torusKnot = new THREE.Mesh(geometry, material);
+        scene.add(torusKnot);
+
+        camera.position.z = 5;
+
+        // Mouse Interactivity
+        let mouseX = 0;
+        let mouseY = 0;
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = (e.clientX / window.innerWidth) - 0.5;
+            mouseY = (e.clientY / window.innerHeight) - 0.5;
+        });
+
+        // Animation Loop
+        const clock = new THREE.Clock();
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsedTime = clock.getElapsedTime();
+
+            // Rotate objects
+            torusKnot.rotation.x = elapsedTime * 0.2;
+            torusKnot.rotation.y = elapsedTime * 0.3;
+
+            particlesMesh.rotation.y = -elapsedTime * 0.05;
+
+            // Mouse parallax effect
+            camera.position.x += (mouseX * 1.5 - camera.position.x) * 0.05;
+            camera.position.y += (-mouseY * 1.5 - camera.position.y) * 0.05;
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Responsive Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
